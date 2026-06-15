@@ -24,14 +24,14 @@ from src.utils.regulars import *
 #     get_html_content_for_user_authenticate,
 # )
 
-router = APIRouter(tags=["api user"], prefix="/api")
+router = APIRouter(tags=["api", "user"], prefix="/api")
 
 
-@router.post("/users", summary="Сreate new user", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/v1/users", summary="Сreate new user", status_code=status.HTTP_201_CREATED
+)
 @exception_handler
-async def create_user(
-    user: UserSchemaRequest, session: SessionDep
-) -> UserSchemaResponse:
+async def create_user(user: UserSchemaIn, session: SessionDep) -> UserSchemaOut:
 
     if not is_valid_email(user.email) or not is_valid_phone(user.phone):
         raise HTTPException(
@@ -65,22 +65,11 @@ async def create_user(
     session.add(new_user)
     await session.commit()
 
-    code = str(random.randint(100000000000000, 1000000000000000))
-
-    new_email_verification = VerificationModel(
-        code=code,
-        user_id=new_user.id,
-        expires_at=datetime.now() + timedelta(hours=1),
-        is_used=False,
-    )
-
-    session.add(new_email_verification)
-    await session.commit()
     return new_user
 
 
 @router.post(
-    "/user/verify-email",
+    "/v1/user/verify-email",
     summary="Api for send link for accept email ",
     status_code=status.HTTP_201_CREATED,
 )
@@ -132,7 +121,7 @@ async def verify_email(
 
 
 @router.get(
-    "/user/verify-code",
+    "/v1/user/verify-code",
     summary="Api for accept email ",
     status_code=status.HTTP_202_ACCEPTED,
 )
@@ -188,7 +177,7 @@ async def accept_code(
 
 
 @router.patch(
-    "/users/{user_id}",
+    "/v1/users/{user_id}",
     summary="Change user data by user_id",
     status_code=status.HTTP_200_OK,
 )
@@ -198,7 +187,7 @@ async def change_user(
     user_id: int,
     session: SessionDep,
     current_user: CurrentUserSchema = Depends(decode_access_token),
-) -> UserSchemaResponse:
+) -> UserSchemaOut:
 
     if user_id != int(current_user.id) and current_user.role != "admin":
         raise HTTPException(
@@ -234,16 +223,16 @@ async def change_user(
 
 
 @router.delete(
-    "/users/{user_id}",
+    "/v1/users/{user_id}",
     summary="Delete user by id",
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 @exception_handler
 async def delete_user(
     user_id: int,
     session: SessionDep,
     current_user: CurrentUserSchema = Depends(decode_access_token),
-) -> MessageSchemaResponse:
+):
     if user_id != current_user.id and current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -260,10 +249,9 @@ async def delete_user(
         )
 
     await session.commit()
-    return MessageSchemaResponse(message="User successfully deleted !")
 
 
-@router.get(path="/users", summary="Get all users", status_code=status.HTTP_200_OK)
+@router.get(path="/v1/users", summary="Get all users", status_code=status.HTTP_200_OK)
 @exception_handler
 # @cache(expire=30, prefix="get_users", model=UserSchema)
 async def get_users(session: SessionDep) -> list[UserSchema]:
