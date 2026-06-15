@@ -24,12 +24,10 @@ from src.utils.regulars import *
 #     get_html_content_for_user_authenticate,
 # )
 
-router = APIRouter(tags=["api", "user"], prefix="/api")
+router = APIRouter(tags=["api user"], prefix="/api/v1/users")
 
 
-@router.post(
-    "/v1/users", summary="Сreate new user", status_code=status.HTTP_201_CREATED
-)
+@router.post("/", summary="Сreate new user", status_code=status.HTTP_201_CREATED)
 @exception_handler
 async def create_user(user: UserSchemaIn, session: SessionDep) -> UserSchemaOut:
 
@@ -69,7 +67,7 @@ async def create_user(user: UserSchemaIn, session: SessionDep) -> UserSchemaOut:
 
 
 @router.post(
-    "/v1/user/verify-email",
+    "/verify-email",
     summary="Api for send link for accept email ",
     status_code=status.HTTP_201_CREATED,
 )
@@ -121,7 +119,7 @@ async def verify_email(
 
 
 @router.get(
-    "/v1/user/verify-code",
+    "/verify-code",
     summary="Api for accept email ",
     status_code=status.HTTP_202_ACCEPTED,
 )
@@ -177,7 +175,7 @@ async def accept_code(
 
 
 @router.patch(
-    "/v1/users/{user_id}",
+    "/{user_id}",
     summary="Change user data by user_id",
     status_code=status.HTTP_200_OK,
 )
@@ -223,7 +221,7 @@ async def change_user(
 
 
 @router.delete(
-    "/v1/users/{user_id}",
+    "/{user_id}",
     summary="Delete user by id",
     status_code=status.HTTP_204_NO_CONTENT,
 )
@@ -251,7 +249,7 @@ async def delete_user(
     await session.commit()
 
 
-@router.get(path="/v1/users", summary="Get all users", status_code=status.HTTP_200_OK)
+@router.get(path="s", summary="Get all users", status_code=status.HTTP_200_OK)
 @exception_handler
 # @cache(expire=30, prefix="get_users", model=UserSchema)
 async def get_users(session: SessionDep) -> list[UserSchema]:
