@@ -11,11 +11,11 @@ from src.sales_panel.dependencies import SessionDep
 # from src.redis.decorators import cache
 # from src.tasks.email_sender import send_email
 
-router = APIRouter(tags=["api", "sales panel"], prefix="/api")
+router = APIRouter(tags=["api sales panel"], prefix="/api/v1/sales-panel")
 
 
 @router.post(
-    "/v1/sales-panel/categories",
+    "/categories",
     summary="Создание новой категории товаров",
     status_code=status.HTTP_201_CREATED,
 )
@@ -46,7 +46,7 @@ async def create_category(
 
 
 @router.put(
-    "/v1/sales-panel/categories/{category_id}",
+    "/categories/{category_id}",
     summary="Обновление данных категории по category_id",
     status_code=status.HTTP_200_OK,
 )
@@ -82,7 +82,7 @@ async def update_category(
 
 
 @router.delete(
-    "/v1/sales-panel/categories/{category_id}",
+    "/categories/{category_id}",
     summary="Удаление категории по category_id",
     status_code=status.HTTP_204_NO_CONTENT,
 )
@@ -101,7 +101,7 @@ async def delete_category(category_id: int, session: SessionDep) -> None:
 
 
 @router.post(
-    "/v1/sales-panel/products",
+    "/products",
     summary="Создание нового товара",
     status_code=status.HTTP_201_CREATED,
 )
@@ -140,32 +140,14 @@ async def create_product(product_in: ProductSchema, session: SessionDep) -> Prod
     return product_out
 
 
-@router.get(
-    "/v1/sales-panel/products/{product_id}",
-    summary="Просмотр конкретного товара по product_id",
-    status_code=status.HTTP_200_OK,
-)
-@exception_handler
-async def check_product(product_id: int, session: SessionDep) -> ProductOut:
-    product = await session.get(ProductModel, product_id)
-    if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Product with id {product_id} not found",
-        )
-
-    product_out = ProductOut.model_validate(product, from_attributes=True)
-    return product_out
-
-
 @router.patch(
-    "/v1/sales-panel/products/{product_id}",
+    "/products/{product_id}",
     summary="Обновление информации о товаре по product_id",
     status_code=status.HTTP_200_OK,
 )
 @exception_handler
 async def update_product(
-    product_id: int, product_in: ProductInfoUpdate, session: SessionDep
+    product_id: int, product_in: ProductUpdate, session: SessionDep
 ) -> ProductOut:
     product = await session.get(ProductModel, product_id)
     if not product:
@@ -196,7 +178,7 @@ async def update_product(
 
 
 @router.patch(
-    "/v1/sales-panel/products/{product_id}/price-discount",
+    "/products/{product_id}/price-discount",
     summary="Обновление цены или скидки о товаре по product_id",
     status_code=status.HTTP_200_OK,
 )
@@ -220,7 +202,7 @@ async def update_product_price(
 
 
 @router.patch(
-    "/v1/sales-panel/products/{product_id}/stock-quantity",
+    "/products/{product_id}/stock-quantity",
     summary="Обновление количества товара по product_id",
     status_code=status.HTTP_200_OK,
 )
@@ -243,7 +225,7 @@ async def update_product_count(
 
 
 @router.delete(
-    "/v1/sales-panel/products/{product_id}",
+    "/products/{product_id}",
     summary="Удаление товара по product_id",
     status_code=status.HTTP_204_NO_CONTENT,
 )
