@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.database import Base
@@ -18,25 +18,31 @@ class ReviewModel(Base):
     comment: Mapped[str]
     mark: Mapped[int]
 
+    __table_args__ = (
+        UniqueConstraint("user_id", "product_id", name="uq_user_product_review"),
+    )
 
-class ShoppingCartModel(Base):
-    __tablename__ = "shopping_cart"
+
+class CartModel(Base):
+    __tablename__ = "cart"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"))
     product_id: Mapped[int] = mapped_column(
         ForeignKey("product.id", ondelete="CASCADE")
     )
+    added_at: Mapped[datetime]
 
 
-class FavoriteCartModel(Base):
-    __tablename__ = "favorite_cart"
+class LikedModel(Base):
+    __tablename__ = "liked"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"))
     product_id: Mapped[int] = mapped_column(
         ForeignKey("product.id", ondelete="CASCADE")
     )
+    added_at: Mapped[datetime]
 
 
 class OrderModel(Base):
