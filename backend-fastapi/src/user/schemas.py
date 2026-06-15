@@ -18,11 +18,11 @@ class UserSchema(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class UserSchemaResponse(UserSchema):
+class UserSchemaOut(UserSchema):
     id: int
 
 
-class UserSchemaRequest(UserSchema):
+class UserSchemaIn(UserSchema):
     password: str
 
 
@@ -38,10 +38,6 @@ class UserProfileSchema(BaseModel):
     id: int
     first_name: str
     last_name: str
-
-
-class MessageSchemaResponse(BaseModel):
-    message: str
 
 
 class VerificationShema(BaseModel):
