@@ -33,7 +33,7 @@ class ProductOut(ProductSchema):
     id: int
 
 
-class ProductInfoUpdate(BaseModel):
+class ProductUpdate(BaseModel):
     category_id: Optional[int] = None
     slug: Optional[str] = None
     title: Optional[str] = None
