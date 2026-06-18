@@ -12,17 +12,17 @@ from src.user.schemas import *
 from src.user.models import *
 from src.user.dependencies import SessionDep
 
-# from src.redis.decorators import cache
-# from src.tasks.email_sender import send_email
+from src.redis.decorators import cache
+from src.tasks.email_sender import send_email
 
 from src.auth.security import decode_access_token, hash_password
 from src.auth.schemas import CurrentUserSchema
 from src.utils.regulars import *
 
-# from src.utils.html_content import (
-#     get_html_content_for_email_verification,
-#     get_html_content_for_user_authenticate,
-# )
+from src.utils.html_content import (
+    get_html_content_for_email_verification,
+    get_html_content_for_user_authenticate,
+)
 
 router = APIRouter(tags=["api user"], prefix="/api/v1/users")
 
@@ -99,21 +99,21 @@ async def verify_email(
     session.add(new_verify_email)
     await session.commit()
 
-    # messsage = get_html_content_for_email_verification(
-    #     code=code, id=new_verify_email.id, first_name=user.first_name
-    # )
+    messsage = get_html_content_for_email_verification(
+        code=code, id=new_verify_email.id, first_name=user.first_name
+    )
 
-    # data_for_email_accept = {
-    #     "email": user.email,
-    #     "subject": "Подтверждение почты",
-    #     "messsage": messsage,
-    # }
+    data_for_email_accept = {
+        "email": user.email,
+        "subject": "Подтверждение почты",
+        "message": messsage,
+    }
 
-    # task = send_email.delay(data_for_email_accept)
+    task = send_email.delay(data_for_email_accept)
 
     return {
         "verification_id": new_verify_email.id,
-        # "task_id": task.id,
+        "task_id": task.id,
         "message": "Verification code created, email will be sent shortly",
     }
 
@@ -251,7 +251,7 @@ async def delete_user(
 
 @router.get(path="s", summary="Get all users", status_code=status.HTTP_200_OK)
 @exception_handler
-# @cache(expire=30, prefix="get_users", model=UserSchema)
+@cache(expire=30, prefix="get_users", model=UserSchema)
 async def get_users(session: SessionDep) -> list[UserSchema]:
     users_execute = await session.execute(select(UserModel))
     users = users_execute.scalars().all()
