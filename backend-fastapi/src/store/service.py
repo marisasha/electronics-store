@@ -15,6 +15,7 @@ from src.store.models import *
 from src.store.dependencies import SessionDep
 
 from src.exeptions import exception_handler
+from src.youkassa import create_payment
 
 # from src.redis.decorators import cache
 # from src.tasks.email_sender import send_email
@@ -426,7 +427,9 @@ async def get_liked_products(
 
 
 @router.post(
-    "/liked", summary="Добавление товара в корзину", status_code=status.HTTP_201_CREATED
+    "/liked",
+    summary="Добавление товара в понравившиеся",
+    status_code=status.HTTP_201_CREATED,
 )
 @exception_handler
 async def add_liked_product(
@@ -461,7 +464,7 @@ async def add_liked_product(
 
 @router.delete(
     "/liked/{liked_product_id}",
-    summary="Удаление товара из корзины",
+    summary="Удаление товара из понравившихся",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_liked_product(
@@ -480,3 +483,97 @@ async def delete_liked_product(
         )
 
     await session.commit()
+
+
+@router.post(
+    "/order", summary="Оформление покупки товаров", status_code=status.HTTP_201_CREATED
+)
+@exception_handler
+async def create_order(
+    order_in: OrderSchema,
+    session: SessionDep,
+    current_user: CurrentUserSchema = Depends(decode_access_token),
+) -> OrderOut:
+
+    new_order = OrderModel(
+        user_id=current_user.id,
+        payment_status=PaymentStatusEnum.PENDING,
+        delivery_status=DeliveryStatusEnum.PROCESSING,
+        delivery_address=order_in.delivery_address,
+        delivery_index=order_in.delivery_index,
+    )
+    promo_code = None
+    if order_in.promo_code:
+        promo_code_execute = await session.execute(
+            select(PromoCodeModel).where(PromoCodeModel.code == order_in.promo_code)
+        )
+        promo_code = promo_code_execute.scalar_one_or_none()
+        if promo_code:
+            new_order.promo_code_id = promo_code.id
+
+    session.add(new_order)
+    await session.flush()
+
+    products: list[ProductIdTitleMarkBrand] = []
+    total_price = 0.0
+    total_price_without_discount = 0.0
+    for product in order_in.products:
+        product_info = await session.get(ProductModel, product.product_id)
+        if not product_info:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Prodcut with id {product.product_id} not found",
+            )
+        total_price_without_discount += product_info.price
+        total_price += product_info.price * (1 - product_info.discount / 100)
+
+        new_order_product = OrderProductModel(
+            order_id=new_order.id,
+            product_id=product.product_id,
+            price=product_info.price,
+            discount=product_info.discount,
+        )
+        session.add(new_order_product)
+        products.append(
+            ProductIdTitleBrandPriceDiscount.model_validate(
+                product_info, from_attributes=True
+            )
+        )
+    if promo_code:
+        total_price = total_price - (total_price * promo_code.discount / 100)
+
+    new_order.total_price = total_price
+    new_order.total_price_without_discount = total_price_without_discount
+
+    payment_id, payment_url = await create_payment(
+        new_order.total_price,
+        "https://google.com",
+        "Оплата товаров в electronic store",
+        new_order.id,
+        current_user.id,
+    )
+
+    new_order.payment_id = payment_id
+
+    await session.commit()
+    await session.refresh(new_order)
+
+    order_out = OrderOut(
+        id=new_order.id,
+        user_id=new_order.user_id,
+        total_price=new_order.total_price,
+        total_price_without_discount=new_order.total_price_without_discount,
+        payment_status=new_order.payment_status,
+        delivery_status=new_order.delivery_status,
+        delivery_address=new_order.delivery_address,
+        delivery_index=new_order.delivery_index,
+        products=products,
+        promo_code_data=(
+            PromoCodeSchema.model_validate(promo_code, from_attributes=True)
+            if promo_code
+            else None
+        ),
+        payment_url=payment_url,
+    )
+
+    return order_out
