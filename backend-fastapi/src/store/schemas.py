@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
+from src.utils.enum import PaymentStatusEnum, DeliveryStatusEnum
 
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -13,6 +14,14 @@ class ProductIdTitleMark(BaseModel):
 class ProductIdTitleMarkBrand(ProductIdTitleMark):
     brand: str
     added_at: Optional[datetime] = None
+
+
+class ProductIdTitleBrandPriceDiscount(BaseModel):
+    id: int
+    title: str
+    brand: str
+    price: float
+    discount: int
 
 
 class ProductsByBrand(BaseModel):
@@ -70,3 +79,36 @@ class LikedSchema(LikedIn):
 
 class LikedOut(LikedSchema):
     id: int
+
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+class PromoCodeSchema(BaseModel):
+    id: int
+    title: str
+    code: str
+    discount: int
+
+
+class OrderProductsSchema(BaseModel):
+    product_id: int
+
+
+class OrderSchema(BaseModel):
+    promo_code: Optional[str] = None
+    delivery_address: str
+    delivery_index: str
+    products: list[OrderProductsSchema]
+
+
+class OrderOut(BaseModel):
+    id: int
+    user_id: int
+    total_price: float
+    total_price_without_discount: float
+    payment_status: PaymentStatusEnum
+    delivery_status: DeliveryStatusEnum
+    delivery_address: str
+    delivery_index: str
+    promo_code_data: Optional[PromoCodeSchema] = None
+    products: list[ProductIdTitleBrandPriceDiscount]
+    payment_url: str
