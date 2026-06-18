@@ -19,6 +19,26 @@ class GenderEnum(str, Enum):
         return self.value
 
 
+class PaymentStatusEnum(str, Enum):
+    PENDING = "PENDING"
+    PAID = "PAID"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+    def __str__(self):
+        return self.value
+
+
+class DeliveryStatusEnum(str, Enum):
+    PROCESSING = "PROCESSING"
+    SHIPPED = "SHIPPED"
+    DELIVERED = "DELIVERED"
+    COMPLETED = "COMPLETED"
+
+    def __str__(self):
+        return self.value
+
+
 class OrderStatusEnum(str, Enum):
     PENDING = "PENDING"
     PAID = "PAID"
