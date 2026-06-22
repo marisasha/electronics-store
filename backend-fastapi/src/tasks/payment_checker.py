@@ -157,29 +157,32 @@ async def run_check_payment(self):
                         )
 
                     logger.info(f"Order {order.id} processed successfully")
-                if product_info.status == "succeeded" and product_info.paid == "paid":
-                    order.payment_status = "PAID"
-                    await session.commit()
-                if product_info.status == "canceled":
-                    logger.warning(f"Payment {order.payment_id} was canceled")
-                    order.payment_status = "FAILED"
-                    await session.commit()
-                    user = await session.get(UserModel, order.user_id)
-                    if user:
-                        message = get_html_content_for_payment(
-                            order.id,
-                            order.total_price,
-                            order.payment_id,
-                            "canceled",
-                            "Оплата товаров в electronic store",
-                        )
-                        send_email.delay(
-                            {
-                                "email": user.email,
-                                "subject": "Платёж отменён",
-                                "message": message,
-                            }
-                        )
+                    if (
+                        payment_info.status == "succeeded"
+                        and payment_info.paid == "paid"
+                    ):
+                        order.payment_status = "PAID"
+                        await session.commit()
+                    if payment_info.status == "canceled":
+                        logger.warning(f"Payment {order.payment_id} was canceled")
+                        order.payment_status = "FAILED"
+                        await session.commit()
+                        user = await session.get(UserModel, order.user_id)
+                        if user:
+                            message = get_html_content_for_payment(
+                                order.id,
+                                order.total_price,
+                                order.payment_id,
+                                "canceled",
+                                "Оплата товаров в electronic store",
+                            )
+                            send_email.delay(
+                                {
+                                    "email": user.email,
+                                    "subject": "Платёж отменён",
+                                    "message": message,
+                                }
+                            )
 
     except Exception as e:
         logger.error(f"Error in payment_checker: {e}", exc_info=True)
