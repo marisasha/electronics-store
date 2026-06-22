@@ -251,7 +251,7 @@ async def delete_user(
 
 @router.get(path="s", summary="Get all users", status_code=status.HTTP_200_OK)
 @exception_handler
-@cache(expire=30, prefix="get_users", model=UserSchema)
+@cache(expire=60 * 3, prefix="get_users", model=UserSchema)
 async def get_users(session: SessionDep) -> list[UserSchema]:
     users_execute = await session.execute(select(UserModel))
     users = users_execute.scalars().all()

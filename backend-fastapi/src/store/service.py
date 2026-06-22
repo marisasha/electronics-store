@@ -17,8 +17,8 @@ from src.store.dependencies import SessionDep
 from src.exeptions import exception_handler
 from src.youkassa import create_payment
 
-# from src.redis.decorators import cache
-# from src.tasks.email_sender import send_email
+from src.redis.decorators import cache
+from src.tasks.email_sender import send_email
 
 router = APIRouter(tags=["api store"], prefix="/api/v1/store")
 
@@ -49,6 +49,7 @@ async def get_categories(session: SessionDep) -> list[CategoryOut]:
     status_code=status.HTTP_200_OK,
 )
 @exception_handler
+@cache(expire=60 * 3, prefix="get_top_products", model=ProductIdTitleMark)
 async def get_top_products(
     session: SessionDep,
     count: int = Query(..., ge=1, le=100, description="Количество выборки топа"),
@@ -81,6 +82,11 @@ async def get_top_products(
     status_code=status.HTTP_200_OK,
 )
 @exception_handler
+@cache(
+    expire=60 * 3,
+    prefix="get_products_by_category",
+    model=ProductSortedByBrandInCategory,
+)
 async def get_products_by_category(
     category_id: int, session: SessionDep
 ) -> ProductSortedByBrandInCategory:
@@ -134,6 +140,11 @@ async def get_products_by_category(
     status_code=status.HTTP_200_OK,
 )
 @exception_handler
+@cache(
+    expire=60 * 3,
+    prefix="get_products_by_brand",
+    model=ProductsByBrand,
+)
 async def get_products_by_brand(brand: str, session: SessionDep) -> ProductsByBrand:
 
     products_execute = await session.execute(
@@ -163,7 +174,12 @@ async def get_products_by_brand(brand: str, session: SessionDep) -> ProductsByBr
     status_code=status.HTTP_200_OK,
 )
 @exception_handler
-async def check_product(product_id: int, session: SessionDep) -> ProductOut:
+@cache(
+    expire=60 * 3,
+    prefix="get_product",
+    model=ProductOut,
+)
+async def get_product(product_id: int, session: SessionDep) -> ProductOut:
     product = await session.get(ProductModel, product_id)
     if not product:
         raise HTTPException(
@@ -181,6 +197,11 @@ async def check_product(product_id: int, session: SessionDep) -> ProductOut:
     status_code=status.HTTP_200_OK,
 )
 @exception_handler
+@cache(
+    expire=60 * 3,
+    prefix="get_reviews",
+    model=ReviewOut,
+)
 async def get_reviews(
     product_id: int,
     session: SessionDep,
@@ -299,6 +320,11 @@ async def delete_review(
     "/cart", summary="Просмотр товаров в корзине", status_code=status.HTTP_200_OK
 )
 @exception_handler
+@cache(
+    expire=60 * 3,
+    prefix="get_products_from_cart",
+    model=ProductIdTitleMarkBrand,
+)
 async def get_products_from_cart(
     session: SessionDep,
     current_user: CurrentUserSchema = Depends(decode_access_token),
@@ -397,6 +423,11 @@ async def delete_product_from_cart(
     "/liked", summary="Просмотр понравившихся товаров", status_code=status.HTTP_200_OK
 )
 @exception_handler
+@cache(
+    expire=60 * 3,
+    prefix="get_liked_products",
+    model=ProductIdTitleMarkBrand,
+)
 async def get_liked_products(
     session: SessionDep,
     current_user: CurrentUserSchema = Depends(decode_access_token),
